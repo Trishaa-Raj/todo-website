@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Animated Category To-Do List</title>
+
+<style>
+  :root{
+    --accent:#3f2b96;
+    --accent-2:#5a42d1;
+    --muted:#9aa0b4;
+    --card:#ffffff;
+    --bg:#f4f6fb;
+    --task-bg:#eef0ff;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: "Inter", "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:var(--bg);
+    color:#0b1530;
+    transition:background .35s ease, color .35s ease;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:40px 16px;
+  }
+
+  body.dark{
+    --card:#161616;
+    --bg:#0b0b0f;
+    --task-bg:#1f1f1f;
+    color:#e6e6e6;
+  }
+
+  .container{
+    width:380px;
+    background:var(--card);
+    border-radius:14px;
+    box-shadow:0 10px 30px rgba(20,25,50,0.08);
+    padding:20px;
+    transition:box-shadow .35s ease, transform .35s ease, background .35s ease;
+    overflow:hidden;
+  }
+
+  .header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+
+  h2{margin:0;font-size:20px;font-weight:600;color:var(--accent)}
+
+  /* Dark mode toggle */
+  .mode-btn{
+    padding:8px 12px;
+    border-radius:10px;
+    background:#eef0ff;
+    color:var(--accent);
+    font-size:13px;
+    cursor:pointer;
+    border:none;
+    transition:transform .18s ease, background .25s ease;
+  }
+  .mode-btn:active{transform:scale(.98)}
+  body.dark .mode-btn{background:#232323;color:#d7cfff}
+
+  /* category tabs */
+  .categories{
+    display:flex;
+    gap:8px;
+    margin-top:16px;
+  }
+  .cat-btn{
+    flex:1;
+    padding:8px;
+    border-radius:10px;
+    border:none;
+    background:transparent;
+    cursor:pointer;
+    color:var(--muted);
+    font-weight:600;
+    transition:background .25s ease, color .25s ease, transform .12s ease;
+  }
+  .cat-btn:hover{transform:translateY(-3px)}
+  .cat-btn.active{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    color:white;
+    box-shadow:0 6px 18px rgba(79,57,155,0.18);
+  }
+
+  /* input area */
+  .input-wrap{margin-top:16px;display:flex;gap:8px;align-items:center}
+  input#taskInput{
+    flex:1;padding:12px;border-radius:10px;border:1px solid #d6d9e6;background:#fbfbff;
+    outline:none;font-size:14px;transition:box-shadow .18s ease, border-color .18s ease;
+  }
+  input#taskInput:focus{box-shadow:0 6px 18px rgba(63,43,150,0.06);border-color:var(--accent)}
+  body.dark input#taskInput{background:#141414;border:1px solid #2b2b2b;color:#ddd}
+
+  button.add-btn{
+    background:var(--accent);color:white;border:none;padding:10px 12px;border-radius:10px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(79,57,155,0.12); transition:transform .12s ease, box-shadow .18s ease;
+  }
+  button.add-btn:active{transform:translateY(1px)}
+
+  /* list area */
+  .list-wrap{margin-top:18px;min-height:120px; transition:opacity .25s ease;}
+  ul#taskList{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+
+  /* Task card */
+  .task-item{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px;border-radius:10px;background:var(--task-bg);
+    box-shadow:0 6px 14px rgba(16,22,40,0.03);
+    transform-origin:center left;
+    transition:transform .28s cubic-bezier(.2,.9,.2,1), box-shadow .2s ease, opacity .25s ease, background .25s ease;
+  }
+
+  .task-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+
+  .task-checkbox{
+    width:18px;height:18px;border-radius:6px;border:2px solid rgba(0,0,0,0.08);display:inline-grid;place-items:center;
+    cursor:pointer;flex-shrink:0; transition:background .18s ease, border-color .18s ease, transform .12s;
+  }
+  .task-checkbox.checked{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));border-color:transparent; transform:scale(.98)
+  }
+
+  .task-text{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; font-size:14px; transition:color .2s ease}
+  .task-text.completed{text-decoration:line-through;color:var(--muted);font-weight:500}
+
+  .del-btn{
+    background:#ff5b5b;color:white;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:600;
+  }
+
+  /* animations */
+  @keyframes fadeInUp {
+    from {opacity:0; transform:translateY(8px) scale(.995)}
+    to {opacity:1; transform:translateY(0) scale(1)}
+  }
+  .task-item.entering{ animation: fadeInUp .28s ease both }
+
+  @keyframes slideOut {
+    from {opacity:1; transform:translateX(0) scale(1)}
+    to {opacity:0; transform:translateX(30px) scale(.98)}
+  }
+  .task-item.removing{ animation: slideOut .26s ease both }
+
+  .meta{font-size:12px;color:var(--muted);margin-top:8px;text-align:center}
+  body.dark .meta{color:#9b9b9b}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h2>To-Do List</h2>
+    <button class="mode-btn" id="modeBtn">🌙 Mode</button>
+  </div>
+
+  <div class="categories">
+    <button class="cat-btn active" onclick="switchCategory('Work', this)">Work</button>
+    <button class="cat-btn" onclick="switchCategory('Study', this)">Study</button>
+    <button class="cat-btn" onclick="switchCategory('Personal', this)">Personal</button>
+  </div>
+
+  <div class="input-wrap">
+    <input id="taskInput" type="text" placeholder="Add a task..."/>
+    <button class="add-btn" onclick="addTask()">Add</button>
+  </div>
+
+  <div class="list-wrap" id="listWrap">
+    <ul id="taskList"></ul>
+    <div class="meta" id="metaInfo">No tasks yet — add a task to begin.</div>
+  </div>
+</div>
+
+<script>
+let currentCategory = "Work";
+const storageKey = "todo_tasks_v1";
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadTasks();
+
+  if (localStorage.getItem("dark") === "1") {
+    document.body.classList.add("dark");
+    document.getElementById("modeBtn").textContent = "☀️ Mode";
+  }
+});
+
+document.getElementById("modeBtn").onclick = () => {
+  document.body.classList.toggle("dark");
+  const isDark = document.body.classList.contains("dark");
+  localStorage.setItem("dark", isDark ? "1" : "0");
+  document.getElementById("modeBtn").textContent = isDark ? "☀️ Mode" : "🌙 Mode";
+};
+
+function switchCategory(cat, btn) {
+  currentCategory = cat;
+  document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  const wrap = document.getElementById("listWrap");
+  wrap.style.opacity = "0";
+  setTimeout(() => {
+    loadTasks();
+    wrap.style.opacity = "1";
+  }, 220);
+}
+
+function addTask() {
+  const input = document.getElementById("taskInput");
+  const val = input.value.trim();
+  if (!val) return alert("Please enter a task.");
+
+  const all = JSON.parse(localStorage.getItem(storageKey) || "{}");
+  all[currentCategory] = all[currentCategory] || [];
+  all[currentCategory].push(val);
+  localStorage.setItem(storageKey, JSON.stringify(all));
+
+  const el = createTaskElement(val);
+  document.getElementById("taskList").prepend(el);
+
+  input.value = "";
+  updateMeta();
+}
+
+function createTaskElement(text) {
+  const li = document.createElement("li");
+  li.className = "task-item entering";
+  li.innerHTML = `
+    <div class="task-left">
+      <div class="task-checkbox"></div>
+      <div class="task-text">${text}</div>
+    </div>
+    <button class="del-btn">Delete</button>
+  `;
+
+  li.querySelector(".task-checkbox").onclick = () => {
+    const cb = li.querySelector(".task-checkbox");
+    const tx = li.querySelector(".task-text");
+    cb.classList.toggle("checked");
+    tx.classList.toggle("completed");
+    updateMeta();
+  };
+
+  li.querySelector(".del-btn").onclick = () => deleteTask(li, text);
+
+  li.onanimationend = e => {
+    if (e.animationName === "fadeInUp") li.classList.remove("entering");
+    if (e.animationName === "slideOut") li.remove();
+  };
+
+  return li;
+}
+
+function deleteTask(li, text) {
+  const all = JSON.parse(localStorage.getItem(storageKey) || "{}");
+  all[currentCategory] = (all[currentCategory] || []).filter(t => t !== text);
+  localStorage.setItem(storageKey, JSON.stringify(all));
+
+  li.classList.add("removing");
+  updateMeta();
+}
+
+function loadTasks() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+  const all = JSON.parse(localStorage.getItem(storageKey) || "{}");
+  const arr = all[currentCategory] || [];
+
+  if (!arr.length) {
+    document.getElementById("metaInfo").textContent = "No tasks in this category.";
+    return;
+  }
+
+  arr.slice().reverse().forEach(t => list.appendChild(createTaskElement(t)));
+  updateMeta();
+}
+
+function updateMeta() {
+  const items = document.querySelectorAll("#taskList .task-item");
+  const total = items.length;
+  const done = [...items].filter(it =>
+    it.querySelector(".task-text").classList.contains("completed")
+  ).length;
+
+  document.getElementById("metaInfo").textContent =
+    `${done} completed • ${total - done} pending • ${total} total`;
+}
+</script>
+</body>
+</html>
